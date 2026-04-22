@@ -24,8 +24,9 @@ def load_gsod(spark, start_year: int, end_year: int):
             spark.read.format("bigquery")
             .option("table", table)
             .load()
+            .filter(F.col("wban") != "99999")
             .select(
-                F.concat_ws("-", F.col("stn"), F.col("wban")).alias("station_id"),
+                F.col("wban").alias("station_id"),
                 # BQ column "date" is fine in SQL but trips Spark's column resolver;
                 # reassemble from year/mo/da instead.
                 F.to_date(F.concat_ws("-", F.col("year"), F.col("mo"), F.col("da")),
@@ -54,7 +55,10 @@ def load_gsod(spark, start_year: int, end_year: int):
     out = dfs[0]
     for d in dfs[1:]:
         out = out.unionByName(d)
-    return out
+    # Same WBAN may appear under different (stn) codes with identical readings;
+    # collapse to one row per (station_id, weather_date) so the join doesn't
+    # fan out.
+    return out.dropDuplicates(["station_id", "weather_date"])
 
 
 def main():

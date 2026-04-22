@@ -52,26 +52,23 @@ def main():
         .filter(F.col("ap_lat").isNotNull() & F.col("ap_lon").isNotNull())
     )
 
-    # USAF='999999' is a "no code" placeholder; those rows in GSOD are rare and
-    # many major airports have a duplicate row in the stations table — one with
-    # a real USAF and one with 999999. Only the real-USAF version actually joins
-    # against GSOD's stn column. Filter placeholders out before matching.
+    # WBAN is a 5-digit US-specific station id and is stable across USAF-code
+    # changes. The stations table has multiple rows per physical station (old
+    # and new USAF codes), so we collapse by WBAN and pick any representative
+    # lat/lon. Join back to GSOD is done on WBAN alone (US-only workload).
     stations = (
         spark.read.format("bigquery")
         .option("table", STATIONS_TABLE)
         .load()
-        .select(
-            F.col("usaf"),
-            F.col("wban"),
-            F.concat_ws("-", F.col("usaf"), F.col("wban")).alias("station_id"),
-            F.col("lat").cast("double").alias("st_lat"),
-            F.col("lon").cast("double").alias("st_lon"),
-            F.col("country"),
-        )
         .filter(F.col("country") == "US")
-        .filter(F.col("usaf") != "999999")
-        .filter(F.col("wban") != "99999")
-        .filter(F.col("st_lat").isNotNull() & F.col("st_lon").isNotNull())
+        .filter(F.col("wban").isNotNull() & (F.col("wban") != "99999"))
+        .filter(F.col("lat").isNotNull() & F.col("lon").isNotNull())
+        .groupBy("wban")
+        .agg(
+            F.first("lat").cast("double").alias("st_lat"),
+            F.first("lon").cast("double").alias("st_lon"),
+        )
+        .withColumnRenamed("wban", "station_id")
     )
 
     # Haversine distance (km). We cross-join after pre-filtering by a lat/lon box
