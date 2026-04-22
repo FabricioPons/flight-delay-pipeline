@@ -54,8 +54,11 @@ def main():
 
     # WBAN is a 5-digit US-specific station id and is stable across USAF-code
     # changes. The stations table has multiple rows per physical station (old
-    # and new USAF codes), so we collapse by WBAN and pick any representative
-    # lat/lon. Join back to GSOD is done on WBAN alone (US-only workload).
+    # and new USAF codes). We also need to filter out decommissioned stations
+    # like WBAN 14810 "Park Ridge AF" (closed 1958) that still appear in the
+    # table and can outrank a live station by happening to be geographically
+    # closer. `end` is YYYYMMDD (string) — keep only stations active through
+    # the start of our study window.
     stations = (
         spark.read.format("bigquery")
         .option("table", STATIONS_TABLE)
@@ -63,6 +66,7 @@ def main():
         .filter(F.col("country") == "US")
         .filter(F.col("wban").isNotNull() & (F.col("wban") != "99999"))
         .filter(F.col("lat").isNotNull() & F.col("lon").isNotNull())
+        .filter(F.col("end") >= "20190101")
         .groupBy("wban")
         .agg(
             F.first("lat").cast("double").alias("st_lat"),
