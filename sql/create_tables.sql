@@ -53,7 +53,7 @@ SELECT
   SAFE_DIVIDE(COUNTIF(f.cancelled = 1), COUNT(*)) AS cancellation_rate
 FROM `flight-delay-pipeline-494116.flight_delay_analytics.flights_weather_enriched` f
 JOIN ap ON f.origin = ap.iata
-GROUP BY iata, name, latitude_deg, longitude_deg;
+GROUP BY iata, name, latitude, longitude;
 
 -- ============================================================
 -- View: v_weather_correlation (Panel: weather buckets vs delay rate)
