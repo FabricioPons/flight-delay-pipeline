@@ -38,15 +38,15 @@ GROUP BY reporting_airline, month;
 -- ============================================================
 CREATE OR REPLACE VIEW `flight-delay-pipeline-494116.flight_delay_analytics.v_airport_delay_heatmap` AS
 WITH ap AS (
-  SELECT iata_code AS iata, latitude_deg, longitude_deg, name
+  SELECT faa_identifier AS iata, latitude, longitude, name
   FROM `bigquery-public-data.faa.us_airports`
-  WHERE iata_code IS NOT NULL
+  WHERE faa_identifier IS NOT NULL
 )
 SELECT
   f.origin                                  AS iata,
   ap.name,
-  ap.latitude_deg,
-  ap.longitude_deg,
+  ap.latitude,
+  ap.longitude,
   COUNT(*)                                  AS total_flights,
   AVG(f.dep_delay_minutes)                  AS avg_dep_delay_min,
   AVG(f.arr_delay_minutes)                  AS avg_arr_delay_min,

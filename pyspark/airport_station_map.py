@@ -37,16 +37,19 @@ def main():
         .getOrCreate()
     )
 
+    # bigquery-public-data.faa.us_airports uses faa_identifier, which equals
+    # the IATA code for virtually all US commercial airports (LAX, JFK, ORD, ...).
     airports = (
         spark.read.format("bigquery")
         .option("table", AIRPORTS_TABLE)
         .load()
         .select(
-            F.col("iata_code").alias("iata"),
-            F.col("latitude_deg").cast("double").alias("ap_lat"),
-            F.col("longitude_deg").cast("double").alias("ap_lon"),
+            F.col("faa_identifier").alias("iata"),
+            F.col("latitude").cast("double").alias("ap_lat"),
+            F.col("longitude").cast("double").alias("ap_lon"),
         )
         .filter(F.col("iata").isNotNull())
+        .filter(F.col("ap_lat").isNotNull() & F.col("ap_lon").isNotNull())
     )
 
     stations = (
