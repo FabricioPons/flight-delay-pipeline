@@ -19,7 +19,6 @@ gcloud dataproc clusters create "${CLUSTER_NAME}" \
   --worker-boot-disk-size=100 \
   --image-version=2.2-debian12 \
   --bucket="${STAGING_BUCKET}" \
-  --max-idle=1h \
-  --properties="spark:spark.jars.packages=com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.41.0"
+  --max-idle=1h
 
 echo "==> Cluster ${CLUSTER_NAME} ready in ${REGION}."
