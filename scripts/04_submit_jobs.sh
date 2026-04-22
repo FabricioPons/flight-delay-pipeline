@@ -11,26 +11,19 @@ RAW_BUCKET="${PROJECT_ID}-raw"
 PROCESSED_BUCKET="${PROJECT_ID}-processed"
 STAGING_BUCKET="${PROJECT_ID}-dataproc-staging"
 
-# Google-hosted BQ connector JAR (no external egress required).
-BQ_CONNECTOR_JAR="gs://spark-lib/bigquery/spark-bigquery-with-dependencies_2.12-0.44.1.jar"
+# Dataproc image 2.2 ships the Spark BigQuery connector pre-installed, so no
+# --jars / --packages is needed for jobs that read from BigQuery.
 
 submit() {
   local script="$1"
-  local with_bq="${2:-no}"
   local name
   name="$(basename "${script}" .py)"
 
   echo "==> Submitting ${name}"
 
-  local jars_arg=""
-  if [[ "${with_bq}" == "bq" ]]; then
-    jars_arg="--jars=${BQ_CONNECTOR_JAR}"
-  fi
-
   gcloud dataproc jobs submit pyspark "${script}" \
     --cluster="${CLUSTER_NAME}" \
     --region="${REGION}" \
-    ${jars_arg} \
     -- \
     --project="${PROJECT_ID}" \
     --raw-bucket="${RAW_BUCKET}" \
@@ -38,12 +31,8 @@ submit() {
     --staging-bucket="${STAGING_BUCKET}"
 }
 
-# clean_flights reads/writes GCS only — no BQ connector needed.
-submit pyspark/clean_flights.py no
-
-# airport_station_map + join_flights_weather read from the BigQuery public
-# dataset; supply the connector JAR from gs://spark-lib.
-submit pyspark/airport_station_map.py bq
-submit pyspark/join_flights_weather.py bq
+submit pyspark/clean_flights.py
+submit pyspark/airport_station_map.py
+submit pyspark/join_flights_weather.py
 
 echo "==> All jobs submitted."
