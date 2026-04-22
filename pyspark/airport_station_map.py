@@ -52,17 +52,25 @@ def main():
         .filter(F.col("ap_lat").isNotNull() & F.col("ap_lon").isNotNull())
     )
 
+    # USAF='999999' is a "no code" placeholder; those rows in GSOD are rare and
+    # many major airports have a duplicate row in the stations table — one with
+    # a real USAF and one with 999999. Only the real-USAF version actually joins
+    # against GSOD's stn column. Filter placeholders out before matching.
     stations = (
         spark.read.format("bigquery")
         .option("table", STATIONS_TABLE)
         .load()
         .select(
+            F.col("usaf"),
+            F.col("wban"),
             F.concat_ws("-", F.col("usaf"), F.col("wban")).alias("station_id"),
             F.col("lat").cast("double").alias("st_lat"),
             F.col("lon").cast("double").alias("st_lon"),
             F.col("country"),
         )
         .filter(F.col("country") == "US")
+        .filter(F.col("usaf") != "999999")
+        .filter(F.col("wban") != "99999")
         .filter(F.col("st_lat").isNotNull() & F.col("st_lon").isNotNull())
     )
 
