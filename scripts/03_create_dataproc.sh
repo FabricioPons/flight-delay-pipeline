@@ -6,22 +6,19 @@ set -euo pipefail
 
 : "${PROJECT_ID:?PROJECT_ID env var is required}"
 REGION="${REGION:-us-central1}"
-ZONE="${ZONE:-us-central1-a}"
 CLUSTER_NAME="${CLUSTER_NAME:-flight-delay-cluster}"
 STAGING_BUCKET="${PROJECT_ID}-dataproc-staging"
 
 gcloud dataproc clusters create "${CLUSTER_NAME}" \
   --region="${REGION}" \
-  --zone="${ZONE}" \
-  --master-machine-type=n2-standard-4 \
+  --zone="" \
+  --master-machine-type=e2-standard-2 \
   --master-boot-disk-size=100 \
-  --num-workers=3 \
-  --worker-machine-type=n2-standard-4 \
+  --num-workers=2 \
+  --worker-machine-type=e2-standard-4 \
   --worker-boot-disk-size=100 \
   --image-version=2.2-debian12 \
   --bucket="${STAGING_BUCKET}" \
-  --optional-components=JUPYTER \
-  --enable-component-gateway \
   --max-idle=1h \
   --properties="spark:spark.jars.packages=com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.41.0"
 
