@@ -26,7 +26,10 @@ def load_gsod(spark, start_year: int, end_year: int):
             .load()
             .select(
                 F.concat_ws("-", F.col("stn"), F.col("wban")).alias("station_id"),
-                F.col("date").alias("weather_date"),
+                # BQ column "date" is fine in SQL but trips Spark's column resolver;
+                # reassemble from year/mo/da instead.
+                F.to_date(F.concat_ws("-", F.col("year"), F.col("mo"), F.col("da")),
+                          "yyyy-MM-dd").alias("weather_date"),
                 F.col("temp").cast("double"),
                 F.col("dewp").cast("double"),
                 F.col("slp").cast("double"),
