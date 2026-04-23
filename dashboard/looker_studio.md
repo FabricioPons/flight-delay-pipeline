@@ -13,6 +13,20 @@ This dashboard is fed by five BigQuery views in
 
 ---
 
+## ⚠ Aggregation rule — read first
+
+Every metric in every view is **already aggregated per row** (one row per
+month, per airline, per airport, etc). Looker Studio's default of `SUM`
+will re-sum them and produce nonsense (a monthly on-time rate of 0.78
+summed across 84 months is meaningless).
+
+**Set every numeric metric's aggregation to `AVG`** (not SUM), and for
+rates/percents set the field **Type** to **Percent** so `0.78` renders as
+`78.0%`. Do this by clicking the metric chip in the Setup panel → change
+**Aggregation**, and click the field name → change **Type**.
+
+---
+
 ## One-time connection steps
 
 1. Open **https://lookerstudio.google.com** (same Google account as GCP).
@@ -28,11 +42,12 @@ This dashboard is fed by five BigQuery views in
 ## Panel build order
 
 ### Panel 1 — Monthly on-time rate (2019–2025)
-- Chart: **Time series**.
+- Chart: **Time series** (or Combo if you add the secondary).
 - Data source: `v_monthly_ontime_trend`.
-- Dimension: `month`.
-- Metric: `on_time_rate` (format as percent).
-- Secondary metric: `cancelled_flights` (bar overlay, optional).
+- Date range dimension: `month`.
+- Metric: `on_time_rate` — **Aggregation = AVG**, **Type = Percent**.
+- Optional secondary metric: `delayed_flights` — Aggregation = AVG, put on
+  **Right Y-axis** (Setup → Y-axis → Right) so it doesn't squash the rate line.
 - Title: "Monthly On-Time Rate — COVID impact visible Mar–Jun 2020".
 
 ### Panel 2 — Delay cause breakdown by airline
