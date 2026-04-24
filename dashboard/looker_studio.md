@@ -51,38 +51,111 @@ rates/percents set the field **Type** to **Percent** so `0.78` renders as
 - Title: "Monthly On-Time Rate — COVID impact visible Mar–Jun 2020".
 
 ### Panel 2 — Delay cause breakdown by airline
-- Chart: **100% stacked bar**.
+- Chart type: **100% stacked column chart** (under the Bar chart family in
+  the Chart types picker).
 - Data source: `v_delay_cause_breakdown`.
-- Dimension: `reporting_airline`.
-- Breakdown metrics (in order): `carrier_delay_min`, `weather_delay_min`,
-  `nas_delay_min`, `security_delay_min`, `late_aircraft_delay_min`.
+- Dimension (X-axis): `reporting_airline`.
+- **Breakdown dimension: LEAVE EMPTY.** (Do not put a metric column here —
+  that's what splits a single metric by a categorical; we want the opposite.)
+- Metric (Y-axis) — **add all five** with **Aggregation = SUM**:
+  `carrier_delay_min`, `weather_delay_min`, `nas_delay_min`,
+  `security_delay_min`, `late_aircraft_delay_min`.
 - Filter control above chart: `month` (range).
 - Title: "Where Do Delays Come From? (by Airline)".
+
+> Aggregation note: these five columns are pre-computed minute totals per
+> (airline, month), so SUM rolls up to per-airline totals. (Panel 1's
+> `on_time_rate` was a rate, so we used AVG instead.)
 
 ### Panel 3 — Airport delay heatmap
 - Chart: **Geo chart → Google Maps → Bubble map**.
 - Data source: `v_airport_delay_heatmap`.
-- Location: `latitude_deg, longitude_deg` (create a Geo field concatenating
-  them if needed).
-- Bubble size metric: `total_flights`.
-- Bubble color metric: `avg_arr_delay_min`.
+- Location: create a **Geo field** by combining `latitude` and `longitude`
+  (Resource → Manage added data sources → select the source → click Add a
+  Field, use a formula like `CONCAT(latitude, ",", longitude)` with type
+  "Latitude, Longitude").
+- Bubble size metric: `total_flights` — Aggregation **SUM** (pre-aggregated
+  per airport; SUM = passthrough since one row per airport).
+- Bubble color metric: `avg_arr_delay_min` — Aggregation **AVG**.
 - Title: "Average Arrival Delay by Origin Airport".
 
 ### Panel 4 — Weather vs delay rate
-- Chart: **Pivot table** or **heatmap**.
+- Chart type: **Pivot table with heatmap** (Tables → Pivot table, then in
+  Style turn on the heatmap conditional formatting).
 - Data source: `v_weather_correlation`.
 - Rows: `wind_bucket`.
 - Columns: `visib_bucket`.
-- Metric: `delay_rate` (format as percent).
+- Metric: `delay_rate` — Aggregation **AVG**, Type **Percent**.
 - Title: "Delay Rate by Wind × Visibility Bucket (Origin Weather)".
 
 ### Panel 5 — Airline KPI table
-- Chart: **Table with heatmap**.
+- Chart type: **Table with heatmap** (Tables → Table, then Style → turn on
+  heatmap conditional formatting).
 - Data source: `v_airline_kpi`.
 - Dimension: `reporting_airline`.
-- Metrics: `flights`, `avg_arr_delay_min`, `on_time_pct`, `cancellation_pct`.
+- Metrics (one row per airline in the view, so any aggregation = passthrough;
+  use **AVG** to be safe):
+  - `flights` — AVG, Type Number (comma thousands).
+  - `avg_arr_delay_min` — AVG, Type Number (1 decimal).
+  - `on_time_pct` — AVG, Type Percent (already scaled 0-100 in the view;
+    if the view returns 78.16 and Looker shows 7816%, divide by 100 with
+    a calculated field — unlikely; Percent type in Looker expects 0-1 so
+    set Type to Number with a `%` suffix via Style instead).
+  - `cancellation_pct` — same as above.
 - Conditional formatting: color-scale `avg_arr_delay_min` (red = higher).
 - Title: "Airline Performance Summary (2019–2025)".
+
+---
+
+## ML panels (page 2 of the dashboard)
+
+Three tables back the ML portion — feed them to Looker Studio as additional
+data sources just like the five views above:
+
+| Table | Panel |
+|---|---|
+| `m_eval_metrics` | Panel 6 (scorecards) |
+| `m_confusion_matrix` | Panel 7 (pivot heatmap) |
+| `m_feature_importance` | Panel 8 (horizontal bar) |
+
+Add a second page to the report (Page → Add page) so these don't clutter
+the main analytics canvas.
+
+### Panel 6 — Model quality scorecards
+- Chart type: six **Scorecard** charts (one per metric) laid out in a row.
+  Or a single **Table** with one row if you'd rather.
+- Data source: `m_eval_metrics`.
+- Metrics (each Scorecard takes exactly one):
+  - `roc_auc` — AVG, Type Number (3 decimals). Title: "ROC-AUC".
+  - `accuracy` — AVG, Type Percent. Title: "Accuracy".
+  - `precision` — AVG, Type Percent. Title: "Precision".
+  - `recall` — AVG, Type Percent. Title: "Recall".
+  - `f1` — AVG, Type Percent. Title: "F1".
+  - `log_loss` — AVG, Type Number (3 decimals). Title: "Log-loss".
+
+### Panel 7 — Confusion matrix (2025 holdout)
+- Chart type: **Pivot table with heatmap**.
+- Data source: `m_confusion_matrix`.
+- Row dimension: `actual` (0 = on-time, 1 = delayed).
+- Column dimension: `predicted`.
+- Metric: `flights` — SUM, Type Number (comma thousands).
+- Title: "Confusion Matrix (threshold 0.5)".
+
+### Panel 8 — Feature importance
+- Chart type: **Horizontal bar chart** (Bar → Horizontal).
+- Data source: `m_feature_importance`.
+- Dimension: `feature`.
+- Metric: `attribution` — AVG, Type Number (4 decimals).
+- Sort: descending on `attribution`.
+- Title: "Feature Importance (ML.GLOBAL_EXPLAIN)".
+
+> Interpretation for the report: `dep_hour` dominates, followed by
+> `reporting_airline`, `origin`, and `dest`. Operational factors outweigh
+> the weather features we added — a good motivating finding for the
+> "next steps" section (try a boosted-tree classifier, more granular
+> weather data).
+
+---
 
 ## Page-level controls (top of dashboard)
 
