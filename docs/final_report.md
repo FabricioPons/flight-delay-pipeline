@@ -3,8 +3,8 @@
 **Name:** Fabricio Pons Samano
 **Course:** Data-Intensive Systems — Final Project
 **Date:** 2026-05-10
-**Repository:** *(GitHub URL — to add at submission)*
-**Dashboard:** *(Looker Studio share link — to add at submission)*
+**Repository:** *(GitHub URL — paste here once the repo is pushed and the instructor is added as a collaborator)*
+**Live dashboard:** https://datastudio.google.com/reporting/53ef7ced-41f6-4e30-893b-c9a9654fce25
 
 ---
 
@@ -109,15 +109,15 @@ Five views power the dashboard:
 
 Three additional tables back the ML page (`m_eval_metrics`, `m_confusion_matrix`, `m_feature_importance`), materialized from `ML.EVALUATE`, `ML.CONFUSION_MATRIX`, and `ML.GLOBAL_EXPLAIN`. A fourth table (`m_model_comparison`) holds side-by-side metrics for the logistic vs boosted comparison.
 
-## 5. Results
+## 5. Results obtained
 
-### Headline numbers
+### 5.1 Headline numbers
 
 - **Total flights analyzed:** 45,763,492 (2019–2025).
 - **Weather-join coverage:** 94.4% of flights have origin-airport weather attached.
 - **Overall on-time rate:** ~78.7% across the seven-year window.
 
-### Airline leaderboard (on-time % at `arr_del15 = 0`)
+### 5.2 Airline leaderboard (on-time % at `arr_del15 = 0`)
 
 | Airline | On-time % |
 |---|---|
@@ -131,13 +131,13 @@ Three additional tables back the ML page (`m_eval_metrics`, `m_confusion_matrix`
 | American (AA) | 76.1% |
 | JetBlue (B6) | 71.4% |
 
-### COVID-19 impact (cancellation rate)
+### 5.3 COVID-19 impact (cancellation rate)
 
 - **2019 baseline:** 1.82%
 - **2020:** **5.99%** (peak in Mar–Jun, clearly visible in the monthly time-series panel as a vertical drop in on-time rate followed by a multi-month recovery)
 - **2021 recovery:** 1.72%
 
-### Weather-correlated delay rate (origin weather, panel 4)
+### 5.4 Weather-correlated delay rate (origin weather, panel 4)
 
 The pivot heatmap shows delay rate climbing with worsening weather at the origin until ~30 kt wind, at which point delay rate **drops** because flights get **cancelled** rather than flown-and-delayed:
 
@@ -151,25 +151,7 @@ The pivot heatmap shows delay rate climbing with worsening weather at the origin
 
 This dual-mode response — delay until breaking point, then cancel — is one of the more interesting analytical findings of the study.
 
-## 6. Visualizations / dashboard
-
-The Looker Studio dashboard is organized as a **two-page report**:
-
-**Page 1 — Analytics (5 panels):**
-1. **Monthly on-time rate (2019–2025)** — line series with the COVID dip in Mar–Jun 2020 clearly visible.
-2. **Delay cause breakdown by airline** — 100% stacked bar showing carrier vs. weather vs. NAS vs. security vs. late-aircraft minutes by reporting airline.
-3. **Airport delay heatmap** — Google Maps bubble map sized by flight count and colored by mean arrival delay; uses a calculated `airport_geo` field combining FAA latitude and longitude.
-4. **Weather vs delay rate** — pivot heatmap of `wind_bucket` × `visibility_bucket`, cells colored by delay rate.
-5. **Airline KPI table** — sortable conditional-formatted table of flights, mean arrival delay, on-time %, and cancellation %.
-
-**Page 2 — ML (3 panels):**
-6. **Model quality scorecards** — six scorecards displaying ROC-AUC, accuracy, precision, recall, F1, and log-loss for both models.
-7. **Confusion matrix** — pivot heatmap on the 2025 holdout (~7M flights).
-8. **Feature importance** — horizontal bar chart from `ML.GLOBAL_EXPLAIN`.
-
-## 7. BigQuery ML model
-
-### 7.1 Logistic regression baseline (`delay_clf`)
+### 5.5 Logistic regression baseline (`delay_clf`)
 
 - Model type: `LOGISTIC_REG` with `auto_class_weights=TRUE`.
 - Features: `reporting_airline`, `origin`, `dest`, `dep_hour`, `day_of_week`, `month`, `distance`, `origin_wdsp` (wind), `origin_prcp` (precipitation), `origin_visib` (visibility), `origin_temp` (temperature).
@@ -195,7 +177,7 @@ The Looker Studio dashboard is organized as a **two-page report**:
 | `dest` | 0.019 |
 | `month` | 0.009 |
 
-### 7.2 Boosted-tree comparison (`delay_clf_boosted`)
+### 5.6 Boosted-tree comparison (`delay_clf_boosted`)
 
 - Model type: `BOOSTED_TREE_CLASSIFIER` (XGBoost backend) with the same features and same train/holdout split as the logistic baseline.
 - Hyperparameters: `max_iterations=50`, `max_tree_depth=8`, `learn_rate=0.1`, `subsample=0.8`.
@@ -209,7 +191,7 @@ The Looker Studio dashboard is organized as a **two-page report**:
 | Log-loss | 0.6888 | **0.6827** | −0.0061 (better) |
 | **ROC-AUC** | **0.6152** | **0.6465** | **+0.0313** |
 
-The boosted tree improves every metric and lifts ROC-AUC by **+0.031** absolute. The gain is real but modest — confirming the analysis in 7.3 that this feature set has a low ceiling regardless of model class.
+The boosted tree improves every metric and lifts ROC-AUC by **+0.031** absolute. The gain is real but modest — confirming the analysis in 5.7 that this feature set has a low ceiling regardless of model class.
 
 **Top features for the boosted model (from `ML.GLOBAL_EXPLAIN`):**
 
@@ -227,7 +209,7 @@ The boosted tree's feature ranking differs sharply from the logistic model's. Th
 
 The model comparison is materialized in `flight_delay_analytics.m_model_comparison` and rendered side-by-side on dashboard page 2.
 
-### 7.3 Interpretation
+### 5.7 Interpretation of model results
 
 The logistic baseline's ROC-AUC of 0.62 indicates **weak but non-trivial** predictive signal. Two factors limit its ceiling:
 
@@ -236,7 +218,27 @@ The logistic baseline's ROC-AUC of 0.62 indicates **weak but non-trivial** predi
 
 The boosted tree's modest gain over the logistic baseline (+0.031 ROC-AUC) confirms that some nonlinear feature interactions exist in this data — most visibly the elevation of `visibility` to the #2 feature — but the absolute ceiling remains low. Both models top out around ROC-AUC 0.65 because the structural limitations of the feature set (daily weather aggregation, no aircraft rotation tracking) dominate the choice of algorithm.
 
-## 8. Challenges encountered and how they were resolved
+## 6. Visualizations / dashboard
+
+**Live dashboard:** https://datastudio.google.com/reporting/53ef7ced-41f6-4e30-893b-c9a9654fce25
+
+The Looker Studio dashboard is organized as a **two-page report**, with a date-range control, an airline filter, and an airport-code filter at the top of page 1.
+
+**Page 1 — Analytics (5 panels):**
+1. **Monthly on-time rate (2019–2025)** — line series with the COVID dip in Mar–Jun 2020 clearly visible.
+2. **Delay cause breakdown by airline** — 100% stacked bar showing carrier vs. weather vs. NAS vs. security vs. late-aircraft minutes by reporting airline.
+3. **Airport delay heatmap** — Google Maps bubble map sized by flight count and colored by mean arrival delay; uses a calculated `airport_geo` field combining FAA latitude and longitude.
+4. **Weather vs delay rate** — pivot heatmap of `wind_bucket` × `visibility_bucket`, cells colored by delay rate.
+5. **Airline KPI table** — sortable conditional-formatted table of flights, mean arrival delay, on-time %, and cancellation %.
+
+**Page 2 — ML (3 panels + comparison table):**
+6. **Model comparison table** — side-by-side metrics from `m_model_comparison` (logistic vs. boosted).
+7. **Confusion matrix** — pivot heatmap on the 2025 holdout (~7M flights), filtered per model.
+8. **Feature importance** — horizontal bar chart from `ML.GLOBAL_EXPLAIN`, filtered per model.
+
+A static export of the full dashboard is included at `dashboard/screenshots/dashboard.pdf`.
+
+## 7. Challenges encountered and how they were resolved
 
 1. **Maven egress from Dataproc workers blocked.** The default `spark.jars.packages` resolution path could not reach `repo1.maven.org` from the cluster network. Resolved by switching every BigQuery-touching job to use the **pre-installed Spark BigQuery connector** that ships with Dataproc 2.2 under `/usr/lib/spark/external/`, dropping the `--jars` flag entirely.
 2. **CPU quota and zone capacity.** Default new-project quota is 12 vCPU per region, and `us-central1-a` had no `n2` capacity. Resolved by downsizing to 10 vCPU total and switching to `e2`-class machines with Dataproc auto-zone (`--zone=""`).
@@ -246,7 +248,7 @@ The boosted tree's modest gain over the logistic baseline (+0.031 ROC-AUC) confi
 6. **Looker Studio's default `SUM` aggregation on pre-aggregated rates.** Panel 1 (on-time rate) initially summed 84 monthly rates, producing values of 60+. Resolved by changing every metric in the dashboard to use `AVG` instead of `SUM` and setting field types to `Percent` for rate columns.
 7. **Geocoding strings vs. lat/lon for the bubble map.** Looker silently dropped airports whose IATA codes its geocoder couldn't resolve. Fixed by adding a calculated `airport_geo = CONCAT(latitude, ",", longitude)` field with type `Geo → Latitude, Longitude`.
 
-## 9. Lessons learned
+## 8. Lessons learned
 
 - **Cloud cost discipline pays.** Auto-deleting the Dataproc cluster after 1 hr idle and using `e2`-class workers kept the entire project under $11. The temptation is to leave clusters running between jobs; resisting that habit roughly 5×'d the budget runway.
 - **Use pre-installed connectors when available.** Time spent fighting `spark.jars.packages` egress could have been avoided by reading the Dataproc 2.2 image release notes first, which call out the bundled Spark-BigQuery connector explicitly.
@@ -255,7 +257,7 @@ The boosted tree's modest gain over the logistic baseline (+0.031 ROC-AUC) confi
 - **Looker Studio's default aggregations are wrong for pre-aggregated views.** Anyone connecting Looker to BigQuery views should expect to override SUM → AVG on every rate metric.
 - **Dashboard iteration is faster than you'd think.** Once the views were in place, building a 5-panel + 3-panel two-page dashboard took roughly two evenings of clicking, mostly debugging defaults rather than designing layouts.
 
-## 10. Potential next steps
+## 9. Potential next steps
 
 - **Hourly METAR weather** (NOAA Integrated Surface Database) instead of daily GSOD, to capture short-duration weather events that drive specific flight delays.
 - **Tail-number rotation features** — for each flight, the delay of the prior leg flown by the same aircraft. This is the single highest-leverage feature missing from the current model.
