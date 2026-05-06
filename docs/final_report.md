@@ -236,7 +236,7 @@ The Looker Studio dashboard is organized as a **two-page report**, with a date-r
 7. **Confusion matrix** — pivot heatmap on the 2025 holdout (~7M flights), filtered per model.
 8. **Feature importance** — horizontal bar chart from `ML.GLOBAL_EXPLAIN`, filtered per model.
 
-A static export of the full dashboard is included at `dashboard/screenshots/dashboard.pdf`.
+A static PDF export of the full dashboard is included at `dashboard/Final_482.pdf`.
 
 ## 7. Challenges encountered and how they were resolved
 
