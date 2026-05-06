@@ -3,7 +3,7 @@
 **Name:** Fabricio Pons Samano
 **Course:** Data-Intensive Systems — Final Project
 **Date:** 2026-05-10
-**Repository:** *(GitHub URL — paste here once the repo is pushed and the instructor is added as a collaborator)*
+**Repository:** https://github.com/FabricioPons/flight-delay-pipeline
 **Live dashboard:** https://datastudio.google.com/reporting/53ef7ced-41f6-4e30-893b-c9a9654fce25
 
 ---
