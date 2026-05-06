@@ -202,12 +202,28 @@ The Looker Studio dashboard is organized as a **two-page report**:
 
 | Metric | Logistic | Boosted | Δ |
 |---|---|---|---|
-| Accuracy | 0.5611 | *(pending)* | |
-| Precision | 0.2958 | *(pending)* | |
-| Recall | 0.6347 | *(pending)* | |
-| F1 | 0.4035 | *(pending)* | |
-| Log-loss | 0.6892 | *(pending)* | |
-| **ROC-AUC** | **0.6152** | *(pending)* | |
+| Accuracy | 0.5611 | **0.5874** | +0.0263 |
+| Precision | 0.2958 | **0.3164** | +0.0206 |
+| Recall | 0.6347 | **0.6582** | +0.0235 |
+| F1 | 0.4035 | **0.4273** | +0.0238 |
+| Log-loss | 0.6888 | **0.6827** | −0.0061 (better) |
+| **ROC-AUC** | **0.6152** | **0.6465** | **+0.0313** |
+
+The boosted tree improves every metric and lifts ROC-AUC by **+0.031** absolute. The gain is real but modest — confirming the analysis in 7.3 that this feature set has a low ceiling regardless of model class.
+
+**Top features for the boosted model (from `ML.GLOBAL_EXPLAIN`):**
+
+| Feature | Attribution | Rank vs. logistic |
+|---|---|---|
+| `dep_hour` | 0.030 | #1 in both models |
+| `visibility` | 0.015 | jumped from low to #2 |
+| `month` | 0.010 | up |
+| `temperature` | 0.010 | up |
+| `distance` | 0.005 | similar |
+| `reporting_airline` | 0.004 | dropped from #2 to #7 |
+| `origin` | 0.0004 | dropped from #3 to #9 |
+
+The boosted tree's feature ranking differs sharply from the logistic model's. This is expected: logistic regression treats high-cardinality categoricals (`origin`, `dest`, `reporting_airline`) as large one-hot encodings whose coefficients sum to inflated apparent attribution. Boosted trees use direct categorical splits and only "spend" attribution on a feature if it informs the prediction. The result is a more honest ranking that surfaces **`visibility` as the second-strongest predictor** — a finding that was masked in the logistic model.
 
 The model comparison is materialized in `flight_delay_analytics.m_model_comparison` and rendered side-by-side on dashboard page 2.
 
@@ -218,7 +234,7 @@ The logistic baseline's ROC-AUC of 0.62 indicates **weak but non-trivial** predi
 1. **Daily-resolution weather is too coarse** to capture the short, intense events (line storms, gusts, microbursts) that cause specific flights to delay. Hourly METAR observations would likely lift weather features' predictive contribution.
 2. **The dominant single driver of delay — late-aircraft propagation** (BTS attributes ~30% of all delay minutes to "late aircraft") — is **not encoded in the feature set** because we don't track tail numbers across consecutive flights. Adding rotation features (e.g. delay of the prior leg by tail number) is the highest-leverage future extension.
 
-The boosted tree's gain over the logistic baseline (when training completes) confirms that nonlinear feature interactions exist in this data — for example, "wind matters at LGA but not at PHX" — that a single linear equation cannot capture.
+The boosted tree's modest gain over the logistic baseline (+0.031 ROC-AUC) confirms that some nonlinear feature interactions exist in this data — most visibly the elevation of `visibility` to the #2 feature — but the absolute ceiling remains low. Both models top out around ROC-AUC 0.65 because the structural limitations of the feature set (daily weather aggregation, no aircraft rotation tracking) dominate the choice of algorithm.
 
 ## 8. Challenges encountered and how they were resolved
 

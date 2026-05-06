@@ -98,16 +98,18 @@ Six scorecards · Confusion matrix on 2025 holdout · Feature importance bar cha
 
 ## Slide 8 — Models compared
 
-| Metric | Logistic Regression | Boosted Tree (XGBoost) |
-|---|---|---|
-| ROC-AUC | 0.6152 | *(fill in)* |
-| Precision | 0.2958 | *(fill in)* |
-| Recall | 0.6347 | *(fill in)* |
-| F1 | 0.4035 | *(fill in)* |
+| Metric | Logistic | Boosted | Δ |
+|---|---|---|---|
+| ROC-AUC | 0.6152 | **0.6465** | +0.0313 |
+| Precision | 0.2958 | **0.3164** | +0.0206 |
+| Recall | 0.6347 | **0.6582** | +0.0235 |
+| F1 | 0.4035 | **0.4273** | +0.0238 |
 
 Same features, same train (2019–2024) / holdout (2025) split.
 
-*Speaker note: Lead with ROC-AUC. Logistic baseline says signal exists but is weak; boosted tree reveals nonlinear interactions that linear models can't see.*
+**Plot twist:** Boosted tree promotes `visibility` to the #2 feature (was buried in the logistic model). Operational categoricals (`origin`, `airline`) drop in importance — the linear model was inflating their apparent value via one-hot expansion.
+
+*Speaker note: Lead with ROC-AUC. The +0.03 lift is modest — be honest about it. The interesting story is the feature reordering: nonlinear models reveal that visibility is a genuine predictor that linear models hide. Both models cap around 0.65 because daily weather + no rotation tracking sets a ceiling.*
 
 ---
 
