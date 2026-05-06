@@ -61,8 +61,8 @@ GROUP BY iata, name, latitude, longitude;
 CREATE OR REPLACE VIEW `flight-delay-pipeline-494116.flight_delay_analytics.v_weather_correlation` AS
 SELECT
   CASE
-    WHEN origin_wdsp < 5   THEN '0-5 kt'
-    WHEN origin_wdsp < 10  THEN '5-10 kt'
+    WHEN origin_wdsp < 5   THEN '00-05 kt'
+    WHEN origin_wdsp < 10  THEN '05-10 kt'
     WHEN origin_wdsp < 20  THEN '10-20 kt'
     WHEN origin_wdsp < 30  THEN '20-30 kt'
     ELSE '30+ kt'
